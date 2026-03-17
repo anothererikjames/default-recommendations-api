@@ -1,15 +1,35 @@
-name: Postman API Tests
+name: API Tests & Governance
+
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
 jobs:
-  test:
+  api-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run API Tests
-        run: echo "Running API tests..."
-      - name: Lint
-        run: echo "Linting complete"
+
+      - name: Install Postman CLI
+        run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Login to Postman CLI
+        run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
+
+      - name: Run Collection Tests
+        run: postman collection run 52274286-98e578e6-9092-43ca-90e1-3a1c7602384f
+
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Spectral
+        run: npm install -g @stoplight/spectral-cli
+
+      - name: Lint OpenAPI Spec
+        run: spectral lint openapi.yaml --fail-severity error
+        continue-on-error: true
